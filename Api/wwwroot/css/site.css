@@ -1,0 +1,37 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.input-validation-error ~ .invalid-feedback {
+    display: block;
+}
+
+.field-validation-error {
+  color: #b94a48;
+  display: inline-block;
+}
+
+
+.input-validation-error {
+  /*
+  border: 1px solid #ff0000;
+  background-color: #ffeeee;
+  */
+  color: #b94a48;
+  border-color: #b94a48;
+}

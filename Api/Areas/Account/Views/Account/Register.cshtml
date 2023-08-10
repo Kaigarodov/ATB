@@ -1,0 +1,34 @@
+@model Api.Areas.Rest.Controllers.Account.Dto.Request.RegisterRequest
+
+<h1 class="display-4">Регистрация</h1>
+<form asp-controller="Account" asp-action="Register" method="post">
+    <div>
+        <label class="form-label" asp-for="FIO">ФИО</label>
+        <input class="form-control" asp-for="FIO" type="text"/>
+        <div asp-validation-for="FIO" class="invalid-feedback"></div>
+    </div>
+    <div>
+        <label class="form-label" asp-for="Phone">Телефон</label>
+        <input class="form-control" asp-for="Phone" type="text"/>
+        <div asp-validation-for="Phone" class="invalid-feedback"></div>
+    </div>
+    <div>
+        <label class="form-label" asp-for="Email">Email</label>
+        <input class="form-control" asp-for="Email" type="text"/>
+        <span asp-validation-for="Email" class="invalid-feedback"></span>
+    </div>
+    <div>
+        <label class="form-label" asp-for="Password">Пароль</label>
+        <input class="form-control" asp-for="Password" type="text"/>
+        <span asp-validation-for="Password" class="invalid-feedback"></span>
+
+    </div>
+    <div>
+        <label class="form-label" asp-for="PasswordConfirm">Повторите пароль</label>
+        <input class="form-control" asp-for="PasswordConfirm" type="text"/>
+        <span asp-validation-for="PasswordConfirm" class="invalid-feedback"></span>
+    </div>
+
+    <input class="btn btn-primary mt-3" type="submit"/>
+</form>
+<div class="validation" asp-validation-summary="ModelOnly"></div> 

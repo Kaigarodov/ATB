@@ -1,0 +1,17 @@
+@model Api.Areas.Rest.Controllers.Account.Dto.Request.LoginRequest
+
+<h1 class="display-4">Вход</h1>
+<form class="col" asp-controller="Account" asp-action="Login" method="post">
+    <div class="col-6">
+        <label class="form-label" asp-for="Phone">Телефон</label>
+        <input class="form-control" asp-for="Phone" type="text"/>
+        <span asp-validation-for="Phone"></span>
+    </div>
+    <div class="col-6">
+        <label class="form-label" asp-for="Password">Пароль</label>
+        <input class="form-control" asp-for="Password" type="text"/>
+    </div>
+    <input class="btn btn-primary mt-3" type="submit"/>
+</form>
+
+<a asp-controller="Account" asp-action="Register" >Зарегистрироваться</a>

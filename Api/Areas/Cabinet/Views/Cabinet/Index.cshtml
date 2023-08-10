@@ -1,0 +1,15 @@
+@model Api.Areas.Cabinet.Models.CabinetViewModel
+@section Navbar {
+    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+        <ul class="navbar-nav flex-grow-1">
+            <li class="nav-item mx-2">
+                <a class="text" href="/account/logout">Logout</a>
+            </li>
+        </ul>
+    </div>
+}
+
+<p>@Model.FIO</p>
+<p>@Model.Phone</p>
+<p>@Model.Email</p>
+<p>@Model.LastLogin</p>
