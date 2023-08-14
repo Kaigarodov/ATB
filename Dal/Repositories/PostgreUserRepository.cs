@@ -1,17 +1,17 @@
 using System.Data;
 using System.Reflection;
 using Dal.Helpers.Attributes;
+using Dal.Helpers.Configurations.Interfaces;
 using Dal.Models;
 using Dal.Repositories.Interfaces;
 using Dapper;
-using Microsoft.Extensions.Configuration;
 using Npgsql;
 
 namespace Dal.Repositories;
 
 public class PostgreUserRepository : IUserRepository
 {
-    private IDbConnection _dbConnection;
+    private IDbConnection? _dbConnection;
     private string connectionString;
     public IDbConnection DbConnection
     {
@@ -21,15 +21,13 @@ public class PostgreUserRepository : IUserRepository
             {
                 _dbConnection = new NpgsqlConnection(connectionString);
             }
-
             return _dbConnection;
         }
     }
 
-
-    public PostgreUserRepository(IConfiguration configuration)
+    public PostgreUserRepository(IStorageConfiguration configuration)
     {
-        connectionString = configuration["PostgreDB:ConnectionString"];
+        connectionString = configuration.DBConnectionString;
     }
 
     public void Dispose()
@@ -47,67 +45,45 @@ public class PostgreUserRepository : IUserRepository
             return $"{tableName?.Name ?? typeof(UserDal).Name.ToLower()}";
         }
     }
-
-    public async Task<List<UserDal>> GetAllAsync()
-    {
-        var tableName = typeof(UserDal).GetCustomAttribute<CustomTableNameAttribute>(true);
-        var sql = $"SELECT * FROM {_tableName}";
-        var result = await DbConnection.QueryAsync<UserDal>(sql);
-        return new List<UserDal>(result) ;
-    }
     
-    public void Delete(int id) {}
-    public void Save() {}
-
     public async Task<UserDal> CreateAsync(UserDal user)
     {
-        //TODO: user_seq
-        var sequenceResult = await DbConnection.QueryAsync<int>("SELECT nextval('user_seq')");
+        var sequenceResult = await DbConnection.QueryAsync<int>("SELECT nextval('user_id_seq')");
         var userId = sequenceResult.FirstOrDefault();
-        var sql = $"INSERT INTO {_tableName} "
-            + $"(\"{nameof(UserDal.Id)}\", \"{nameof(UserDal.Email)}\",\"{nameof(UserDal.Phone)}\", \"{nameof(UserDal.Password)}\") "
-            + $"VALUES( {userId}, @{nameof(UserDal.Email)}, @{nameof(UserDal.Phone)}, @{nameof(UserDal.Password)})";
+        var sql = $"INSERT INTO {_tableName} " +
+            $"(\"{nameof(UserDal.Id)}\"," +
+            $"\"{nameof(UserDal.FIO)}\"," +
+            $"\"{nameof(UserDal.Email)}\"," +
+            $"\"{nameof(UserDal.Phone)}\"," +
+            $"\"{nameof(UserDal.Password)}\") " + 
+            $"VALUES( @Id,@{nameof(UserDal.FIO)}, @{nameof(UserDal.Email)}, @{nameof(UserDal.Phone)}, @{nameof(UserDal.Password)})";
         
-        try
+        await DbConnection.QueryAsync(sql, new
         {
-            await DbConnection.QueryAsync(sql, new
-            {
-                user.Email,
-                user.Phone,
-                user.Password
-            });
-            user.Id = userId;
-        }
-        catch
-        {
-            return null;
-        }
+            Id = userId,
+            user.FIO,
+            user.Email,
+            user.Phone,
+            user.Password
+        });
+        user.Id = userId;
 
         return user;
     }
 
-    public async Task<bool> UpdateAsync(Dictionary<string, object> updateField, Dictionary<string, object> searchField)
+    public async Task<UserDal?> UpdateAsync(Dictionary<string, object> updateField, Dictionary<string, object> searchField)
     {
         if (updateField.Count == 0 || searchField.Count == 0)
         {
-            return false;
+            return null;
         }
-
         var sqlParameters = new DynamicParameters();
         var setExpression = CreateSetExpression(updateField,sqlParameters);
         var whereCondition = CreateSetExpression(searchField,sqlParameters);
         var sql = $"UPDATE {_tableName} SET {setExpression} WHERE {whereCondition}";
-        
-        try
-        {
-            var f = await DbConnection.QueryAsync(sql, sqlParameters);
-            return true;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return false;
-        }
+        await DbConnection.QueryAsync(sql, sqlParameters);
+        var user = await GetByField(searchField);
+        return user.FirstOrDefault();
     }
 
     public async Task<List<UserDal>> GetByField(Dictionary<string, object> searchField)
@@ -115,26 +91,14 @@ public class PostgreUserRepository : IUserRepository
         var sqlParams = new DynamicParameters();
         var whereCondition = CreateSearchExpression(searchField, sqlParams);
         var sql = $"SELECT * FROM {_tableName} WHERE {whereCondition}";
-        try
-        {
-            
-            var result = await DbConnection.QueryAsync<UserDal>(sql, sqlParams);
-            return result.ToList();
-        }
-        catch (Exception err)
-        {
-            return null;
-        }
+        var result = await DbConnection.QueryAsync<UserDal>(sql, sqlParams);
+        return result.ToList();
     }
 
     public async Task<bool> ExistByAsync(Dictionary<string, object> searchField)
     {
         var field = await GetByField(searchField);
-        if (field.FirstOrDefault() is UserDal)
-        {
-            return true;
-        }
-        return false;
+        return field.FirstOrDefault() is UserDal;
     }
 
     private string CreateSetExpression(Dictionary<string, object> updateField, DynamicParameters parameters)

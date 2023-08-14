@@ -1,10 +1,10 @@
+using System.Security.Claims;
 using AutoMapper;
 using Dal.Models;
 using Dal.Repositories.Interfaces;
 using Logic.Account.Interfaces;
 using Logic.Account.Models;
 using Logic.Account.Services.Interfaces;
-using Logic.Application.Services.Interfaces;
 
 namespace Logic.Account;
 
@@ -13,20 +13,16 @@ public class AccountManager : IAccountManager
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly IClaimsService<UserDal> _claimsService;
-    private readonly IJwtTokenService _jwtTokenService;
-
     
     public AccountManager(
         IUserRepository userRepository, 
         IMapper mapper, 
-        IClaimsService<UserDal> claimsService,
-        IJwtTokenService jwtTokenService
+        IClaimsService<UserDal> claimsService
         )
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _claimsService = claimsService;
-        _jwtTokenService = jwtTokenService;
     }
     
     public async Task<UserDal> CreateAsync(AccountCreateModel createModel)
@@ -41,13 +37,11 @@ public class AccountManager : IAccountManager
         {
             throw new Exception("user is exist");
         }
-
         var userData = _mapper.Map<UserDal>(createModel);
-        
         return await _userRepository.CreateAsync(userData);
     }
-
-    public async Task<string> AuthorizeUser(AuthorizationModel model)
+    
+    public async Task<ClaimsPrincipal> AuthUserAsync(AuthUserModel model)
     {
         var users = await _userRepository.GetByField(new Dictionary<string, object>()
             {
@@ -59,36 +53,32 @@ public class AccountManager : IAccountManager
         {
             throw new Exception("there is no user with such a password or phone number");
         }
-        
         user = await UpdateLastLogin(user);
-        var token = await CreateUserToken(user);
-        
-        return token;
+        return _claimsService.GetClaimsPrincipal(user);;
     }
 
-    public async Task<string> CreateUserToken(UserDal user)
-    {
-        var claims = _claimsService.GetClaims(user);
-        var token = _jwtTokenService.GetJwtToken(claims);
-
-        return token;
-    }
-
-    //TODO: доделать
+    /// <summary>
+    /// Обновление даты последнего входа для пользователя
+    /// </summary>
+    /// <param name="user">Модель пользователя</param>
     private async Task<UserDal> UpdateLastLogin(UserDal user)
     {
         DateTime utcTime = DateTime.UtcNow;
-        await _userRepository.UpdateAsync(new Dictionary<string, object>()
+        var freshUser = await _userRepository.UpdateAsync(new Dictionary<string, object>()
         {
             {nameof(UserDal.LastLogin), utcTime}
         }, new Dictionary<string, object>()
         {
             {nameof(UserDal.Id), user.Id}
         });
-        user.LastLogin = utcTime;
-        return user;
+        return freshUser;
     }
     
+    /// <summary>
+    /// Получить пользователя по номеру телефона
+    /// </summary>
+    /// <param name="phone">Номер телефона</param>
+    /// <returns>Модель пользователя</returns>
     public async Task<UserDal> GetItemByPhoneAsync(string phone)
     {
         var users = await _userRepository.GetByField(new Dictionary<string, object>()
@@ -97,10 +87,4 @@ public class AccountManager : IAccountManager
         });
         return users.FirstOrDefault();
     }
-    
-    public async Task<List<UserDal>> GetAllAsync()
-    {
-        return await _userRepository.GetAllAsync();
-    }
-    
 }

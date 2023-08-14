@@ -1,13 +1,13 @@
 using System.Net;
-using Api.Areas.Rest.Controllers.Account.Dto.Request;
-using Api.Areas.Rest.Controllers.Account.Dto.Response;
+using System.Security.Claims;
+using Api.Common.Account.Dto.Request;
+using Api.Common.Account.Dto.Response;
 using Logic.Account.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
-using Dal.Models;
 using Logic.Account.Models;
-using Logic.Account.Services.Interfaces;
-using Logic.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 
 
@@ -19,22 +19,19 @@ public class AccountApiController : ControllerBase
 {
     private readonly IAccountManager _accountManager;
     private readonly IMapper _mapper;
-    private readonly IClaimsService<UserDal> _claimsService;
-    private readonly IJwtTokenService _jwtTokenService;
 
     public AccountApiController(
         IAccountManager accountManager, 
-        IMapper mapper,
-        IClaimsService<UserDal> claimsService,
-        IJwtTokenService jwtTokenService
+        IMapper mapper
         )
     {
         _accountManager = accountManager;
         _mapper = mapper;
-        _claimsService = claimsService;
-        _jwtTokenService = jwtTokenService;
     }
 
+    /// <summary>
+    /// Регистрация пользователя
+    /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse),400)]
@@ -57,12 +54,23 @@ public class AccountApiController : ControllerBase
         }
     }
     
+    /// <summary>
+    /// Аутентификация пользователя
+    /// </summary>
     [HttpPost("login")]
-    [ProducesResponseType(typeof(LoginRequest), 200)]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
     public async Task<IActionResult> Login([FromBody]LoginRequest dto)
     {
-        var user = await _accountManager.GetItemByPhoneAsync(dto.Phone);
-        if (user == null || !user.Password.Equals(dto.Password))
+        try
+        {
+            var model = _mapper.Map<AuthUserModel>(dto);
+            var claims = await _accountManager.AuthUserAsync(model);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claims));
+
+            return Ok();
+        }
+        catch
         {
             var error = new ErrorResponse()
             {
@@ -71,32 +79,42 @@ public class AccountApiController : ControllerBase
             };
             return BadRequest(error); 
         }
-
-        var claimList = _claimsService.GetClaims(user);
-        return Ok( _jwtTokenService.GetJwtToken(claimList));
     }
     
+    /// <summary>
+    /// Выход пользователя из авторизованной зоны
+    /// </summary>
     [Authorize]
     [HttpGet("logout")]
-    public IActionResult Login()
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Login()
     {
-        return BadRequest();
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return Ok();
     }
 
+    /// <summary>
+    /// Детальная информация о пользователе
+    /// </summary>
     [Authorize]
     [HttpGet("get-my-info")]
-    //[ProducesResponseType(typeof(LoginRequest), 200)]
-    public IActionResult DetailInformation()
+    [ProducesResponseType(typeof(UserInfoResponse), 200)]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DetailInformation()
     {
-        return BadRequest();
-    }
-    
-    //[Authorize]
-    [HttpGet("all")]
-    //[ProducesResponseType(typeof(LoginRequest), 200)]
-    public async Task<IActionResult> GetAllAccount()
-    {
-        var accounts = await _accountManager.GetAllAsync();
-        return Ok(accounts);
+        try
+        {
+            var phone = HttpContext.User.FindFirst(ClaimTypes.MobilePhone).Value;
+            var user = await _accountManager.GetItemByPhoneAsync(phone);
+            var UserInfoResponse = _mapper.Map<UserInfoResponse>(user);
+            return Ok(UserInfoResponse);
+        }
+        catch
+        {
+            var error = new ErrorResponse();
+            return BadRequest(error);
+        }
     }
 }

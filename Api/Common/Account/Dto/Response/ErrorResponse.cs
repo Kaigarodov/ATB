@@ -1,9 +1,7 @@
 using System.Net;
-
-namespace Api.Areas.Rest.Controllers.Account.Dto.Response;
-
+namespace Api.Common.Account.Dto.Response;
 public record ErrorResponse
 {
-    public HttpStatusCode Code { get; init; }
-    public string Message { get; init; }
+    public HttpStatusCode Code { get; init; } = HttpStatusCode.BadRequest;
+    public string Message { get; init; } = "Неизвестная ошибка";
 }

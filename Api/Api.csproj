@@ -10,6 +10,7 @@
     <ItemGroup>
       <Folder Include="Areas\Account" />
       <Folder Include="Common\Account" />
+      <Folder Include="Helpers" />
     </ItemGroup>
 
     <ItemGroup><!--      <Content Include="Areas\Account\Views\Shared\_Layout.cshtml.css" />-->
@@ -37,6 +38,11 @@
       <_ContentIncludedByDefault Remove="Areas\Account\Views\Shared\Error.cshtml" />
       <_ContentIncludedByDefault Remove="Areas\Account\Views\Shared\_Layout.cshtml" />
       <_ContentIncludedByDefault Remove="Areas\Account\Views\Shared\_ValidationScriptsPartial.cshtml" />
+      <_ContentIncludedByDefault Remove="app\publish\web.config" />
+      <_ContentIncludedByDefault Remove="app\publish\Api.deps.json" />
+      <_ContentIncludedByDefault Remove="app\publish\Api.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="app\publish\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="app\publish\appsettings.json" />
     </ItemGroup>
 
 </Project>

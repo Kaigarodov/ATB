@@ -1,0 +1,36 @@
+version: "2.1"
+services:
+  web-application:
+    container_name: web-application
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4050:5000"
+    networks:
+      - web-application
+    depends_on: 
+      postgres_db:
+        condition: service_healthy
+    links:
+      - postgres_db
+
+  postgres_db:
+    container_name: postgres_db
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=artsofte_test_task
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - web-application
+networks:
+  web-application:
+    driver: bridge

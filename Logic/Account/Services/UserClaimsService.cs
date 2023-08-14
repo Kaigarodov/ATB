@@ -6,7 +6,7 @@ namespace Logic.Account.Services;
 
 public class UserClaimsService: IClaimsService<UserDal>
 {
-    public List<Claim> GetClaims(UserDal user)
+    public ClaimsPrincipal GetClaimsPrincipal(UserDal user)
     {
         List<Claim> userClaims = new()
         {
@@ -14,6 +14,8 @@ public class UserClaimsService: IClaimsService<UserDal>
             new Claim(ClaimTypes.Email, user.Email),
         };
 
-        return userClaims;
+        var identity = new ClaimsIdentity(userClaims, "Cookies");
+        return  new ClaimsPrincipal(identity);
+
     }
 }

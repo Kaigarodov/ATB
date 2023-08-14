@@ -1,7 +1,11 @@
-using Api.Areas.Rest.Controllers.Account.Dto.Request;
+using System.Security.Claims;
+using Api.Common.Account.Dto.Request;
 using AutoMapper;
 using Logic.Account.Interfaces;
 using Logic.Account.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -22,6 +26,9 @@ public class AccountController : Controller
         _mapper = mapper;
     }
     
+    /// <summary>
+    /// Страница регистрации
+    /// </summary>
     [Route("register")]
     [HttpGet]
     public IActionResult Register()
@@ -29,6 +36,9 @@ public class AccountController : Controller
         return View();
     }
     
+    /// <summary>
+    /// Обработка формы регистрации пользователя
+    /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromForm]RegisterRequest dto)
     {
@@ -50,14 +60,22 @@ public class AccountController : Controller
             return View();
         }
     }
-
+    
+    /// <summary>
+    /// Страница авторизации пользователя
+    /// </summary>
     [Route("login")]
     [HttpGet]
     public IActionResult Login()
     {
         return View();
     }
-
+    
+    /// <summary>
+    /// Обработка данных с формы авторизации
+    /// </summary>
+    /// <param name="dto"></param>
+    /// <returns></returns>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromForm]LoginRequest dto)
     {
@@ -68,9 +86,9 @@ public class AccountController : Controller
 
         try
         {
-            var authorizeModel = _mapper.Map<AuthorizationModel>(dto);
-            var token = await _accountManager.AuthorizeUser(authorizeModel);
-            TempData["USER_TOKEN"] = token;
+            var authorizeModel = _mapper.Map<AuthUserModel>(dto);
+            var claims = await _accountManager.AuthUserAsync(authorizeModel);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claims));
             return Redirect("/cabinet");
         }
         catch
@@ -79,7 +97,23 @@ public class AccountController : Controller
             return View();
         }
     }
+    
+    /// <summary>
+    /// Выход пользователя из системы
+    /// </summary>
+    [Authorize]
+    [Route("logout")]
+    [HttpGet]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return Redirect("login");
+    }
 
+    /// <summary>
+    /// Успешный слой после регистрации
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     public IActionResult RegisterSuccess()
     {

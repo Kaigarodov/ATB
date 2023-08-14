@@ -1,6 +1,6 @@
-namespace Api.Areas.Cabinet.Models;
+namespace Api.Common.Account.Dto.Response;
 
-public class CabinetViewModel
+public record UserInfoResponse
 {
     public string FIO { get; init; }
     public string Phone { get; init; }

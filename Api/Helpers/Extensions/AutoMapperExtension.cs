@@ -1,10 +1,10 @@
-using Api.Areas.Rest.Controllers.Account.Mapping;
+using Api.Common.Account.Mapping;
 using Logic.Account.Mapping;
 
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Api;
+namespace Api.Helpers.Extensions;
 
 public static class AutoMapperExtension
 {
@@ -12,8 +12,8 @@ public static class AutoMapperExtension
     {
         var configuration = new MapperConfiguration(cfg =>
         {
-            cfg.AddProfile(new RegisterAccountMapping());
-            cfg.AddProfile(new AccountMapping());
+            cfg.AddProfile(new AccountProfile());
+            cfg.AddProfile(new UserInformationProfile());
         });
         IMapper mapper =  configuration.CreateMapper();
         services.TryAddSingleton(mapper);

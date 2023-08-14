@@ -4,9 +4,9 @@ using Logic.Account.Models;
 
 namespace Logic.Account.Mapping;
 
-public class AccountMapping: Profile
+public class UserInformationProfile: Profile
 {
-    public AccountMapping()
+    public UserInformationProfile()
     {
         CreateMap<AccountCreateModel, UserDal>();
     }

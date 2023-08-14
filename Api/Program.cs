@@ -1,10 +1,7 @@
-using System.Text;
-using Api;
+using Api.Helpers.Extensions;
 using Dal;
 using Logic;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,30 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDalServices(builder.Configuration);
 builder.Services.AddLogicServices();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, opt =>
     {
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]));
-        //var config = builder.Configuration.GetValue<>("Jwt")   
-        options.TokenValidationParameters = new TokenValidationParameters()
-        {
-            // указывает, будет ли валидироваться издатель при валидации токена
-            ValidateIssuer = true,
-            // строка, представляющая издателя
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            // будет ли валидироваться потребитель токена
-            ValidateAudience = true,
-            // установка потребителя токена
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            // будет ли валидироваться время существования
-            ValidateLifetime = true,
-            // установка ключа безопасности
-            IssuerSigningKey = signingKey,
-            // валидация ключа безопасности 
-            ValidateIssuerSigningKey = true,
-        };
-    })
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+        opt.LoginPath = "/account/login";
+    });
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
@@ -46,16 +24,9 @@ var app = builder.Build();
 
 app.UpdateDatabase();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-} else
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -67,7 +38,7 @@ app.MapControllers();
 app.MapAreaControllerRoute(
     name:"account",
     areaName:"Account",
-    pattern:"{controller=Account}/{action=Index}");
+    pattern:"{area}/{controller=Account}/{action=Index}");
 app.MapAreaControllerRoute(
     name:"cabinet",
     areaName:"Cabinet",
