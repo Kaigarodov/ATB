@@ -1,5 +1,5 @@
 ## Description
-[Artsofte Test Task](https://github.com/Artsofte-Inc/test-back/blob/main/README.md) repository.
+[Artsofte Test Back](https://github.com/Artsofte-Inc/test-back/blob/main/README.md) repository.
 
 ## Running the app
 ### Сборка
